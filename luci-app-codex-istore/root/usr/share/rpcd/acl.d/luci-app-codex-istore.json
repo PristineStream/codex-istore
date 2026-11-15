@@ -1,0 +1,10 @@
+{
+  "luci-app-codex-istore": {
+    "description": "Read Codex CLI installation status",
+    "read": {
+      "ubus": {
+        "luci.codex-istore": [ "status" ]
+      }
+    }
+  }
+}

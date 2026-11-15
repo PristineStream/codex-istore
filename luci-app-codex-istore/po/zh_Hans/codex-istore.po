@@ -1,0 +1,59 @@
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: zh_Hans\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+msgid "Codex CLI"
+msgstr "Codex 命令行工具"
+
+msgid "Could not check the installation. Check access to the router and try again."
+msgstr "无法检查安装状态。请检查与路由器的连接，然后重试。"
+
+msgid "Installed"
+msgstr "已安装"
+
+msgid "Not installed"
+msgstr "未安装"
+
+msgid "Installation unavailable. Check that its storage is mounted."
+msgstr "无法访问已安装的程序。请检查存储设备是否已挂载。"
+
+msgid "This device is not supported by this package."
+msgstr "此软件包不支持此设备。"
+
+msgid "Version"
+msgstr "版本"
+
+msgid "Platform"
+msgstr "平台"
+
+msgid "Checking installation…"
+msgstr "正在检查安装状态…"
+
+msgid "Refresh status"
+msgstr "刷新状态"
+
+msgid "Install and use Codex CLI from an SSH session. This page does not install software or manage sign-in."
+msgstr "通过 SSH 会话安装和使用 Codex 命令行工具。本页面不会运行安装命令或管理登录。"
+
+msgid "Installation status"
+msgstr "安装状态"
+
+msgid "Get started over SSH"
+msgstr "通过 SSH 开始使用"
+
+msgid "As root, install to a mounted storage volume. Replace <volume> with the volume name:"
+msgstr "以 root 身份安装到已挂载的存储设备。请将 <volume> 替换为存储卷名称："
+
+msgid "As the non-root account that will use Codex, sign in with the official device flow:"
+msgstr "使用运行 Codex 的非 root 账号，通过官方设备登录流程登录："
+
+msgid "Follow the instructions shown in SSH. Device-code authentication must be enabled for your ChatGPT account or workspace. Never share the code."
+msgstr "请按照 SSH 中显示的步骤操作。您的 ChatGPT 账号或工作区需要启用设备码登录。请勿与他人分享设备码。"
+
+msgid "In the same non-root account, change to your project directory and start Codex:"
+msgstr "使用同一个非 root 账号，进入项目目录后启动 Codex："
+
+msgid "Installation status does not indicate whether you are signed in."
+msgstr "安装状态不代表登录状态。"

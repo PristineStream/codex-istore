@@ -1,0 +1,8 @@
+{
+  "admin/services/codex-istore": {
+    "title": "Codex CLI",
+    "order": 90,
+    "action": { "type": "view", "path": "codex-istore/overview" },
+    "depends": { "acl": [ "luci-app-codex-istore" ] }
+  }
+}

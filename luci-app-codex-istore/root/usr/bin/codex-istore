@@ -1,0 +1,125 @@
+#!/bin/sh
+# A separate, pinned Codex installation. It does not change the system CLI.
+set -eu
+CALLER_PATH=${PATH:-/usr/sbin:/usr/bin:/sbin:/bin}
+PATH=/usr/sbin:/usr/bin:/sbin:/bin
+export PATH
+VERSION=0.166.0
+PLATFORM=x86_64-unknown-linux-musl
+PKG_VERSION=0.166.0-linux-x64
+URL=https://registry.npmjs.org/@openai/codex/-/codex-0.166.0-linux-x64.tgz
+SHA512='CxDm3+D1cpbGJeHrdzINoG+3wn9BVncP4qpZaaNYkxe8iPtRJOYyCJnnPoVjWRIBvI9vPKbRoifsMSA5xDaUpw=='
+CONFIG=/etc/codex-istore-runtime
+BASE_NAME=codex-istore-runtime
+RELEASE=$VERSION-$PLATFORM
+error() { printf '%s\n' "codex-istore: $*" >&2; exit 1; }
+platform_ok() { [ "$(uname -s)" = Linux ] && [ "$(uname -m)" = x86_64 ] && [ -e /lib/ld-musl-x86_64.so.1 ]; }
+valid_volume() {
+    case "$1" in /mnt/*) v=${1#/mnt/};; *) return 1;; esac
+    case "$v" in ''|.|..|*[!a-zA-Z0-9_.-]*) return 1;; esac
+    [ ! -L "$1" ] && trusted_mnt && trusted_dir "$1" || return 1
+    opts=$(awk -v path="$1" '$2 == path { options=$4; found=1 } END { if (!found) exit 1; print options }' /proc/mounts) || return 1
+    case ",$opts," in *,noexec,*) return 1;; esac
+    return 0
+}
+trusted_mnt() {
+    # iStoreOS commonly uses a root-owned sticky 1777 /mnt.
+    trusted_dir /mnt && return 0
+    [ -d /mnt ] && [ ! -L /mnt ] && [ "$(stat -c %u /mnt)" = 0 ] && [ "$(stat -c %a /mnt)" = 1777 ]
+}
+# Root ownership and no group/other write on every path component we use.
+trusted_dir() {
+    [ -d "$1" ] && [ ! -L "$1" ] || return 1
+    [ "$(stat -c %u "$1")" = 0 ] || return 1
+    mode=$(stat -c %a "$1") || return 1
+    case "$mode" in *[!0-7]*|'') return 1;; esac
+    last=${mode#${mode%?}}; rem=${mode%?}; group=${rem#${rem%?}}
+    case "$group$last" in *[2367]*) return 1;; esac
+}
+trusted_file() {
+    [ -f "$1" ] && [ ! -L "$1" ] && [ "$(stat -c %u "$1")" = 0 ] || return 1
+    mode=$(stat -c %a "$1") || return 1
+    last=${mode#${mode%?}}; rem=${mode%?}; group=${rem#${rem%?}}
+    case "$group$last" in *[2367]*) return 1;; esac
+}
+usable_release() {
+    trusted_dir "$ROOT" && trusted_dir "$ROOT/$RELEASE" && trusted_dir "$ROOT/$RELEASE/bin" && trusted_dir "$ROOT/$RELEASE/codex-path" && trusted_dir "$ROOT/$RELEASE/codex-resources" || return 1
+    trusted_file "$ROOT/$RELEASE/.verified" && [ "$(cat "$ROOT/$RELEASE/.verified")" = "$SHA512" ] || return 1
+    for executable in bin/codex bin/codex-code-mode-host codex-path/rg codex-resources/bwrap; do
+        trusted_file "$ROOT/$RELEASE/$executable" && [ -x "$ROOT/$RELEASE/$executable" ] || return 1
+    done
+}
+lookup() {
+    VOLUME=
+    [ -e "$CONFIG" ] || return 1
+    trusted_file "$CONFIG" || return 1
+    # A path, never shell code. Restrict it to one simple direct child of /mnt.
+    IFS= read -r VOLUME < "$CONFIG" || return 1
+    valid_volume "$VOLUME" || return 1
+    ROOT=$VOLUME/$BASE_NAME
+    usable_release
+}
+status() {
+    state=missing
+    if ! platform_ok; then state=unsupported
+    elif [ -e "$CONFIG" ] || [ -L "$CONFIG" ]; then
+        if lookup; then state=installed; else state=unavailable; fi
+    fi
+    printf '{"state":"%s","version":"%s","platform":"%s"}\n' "$state" "$VERSION" "$PLATFORM"
+}
+install_runtime() {
+    [ "$(id -u)" = 0 ] || error 'installation requires root'
+    umask 022
+    platform_ok || error 'only Linux x86_64 with musl is supported'
+    [ "$#" -eq 1 ] || error 'usage: codex-istore install /mnt/<volume>'
+    volume=$1
+    valid_volume "$volume" || error 'volume must be a root-owned, trusted, writable executable mount directly under /mnt'
+    case ",$opts," in *,ro,*) error 'installation volume is read-only';; esac
+    if [ -e "$CONFIG" ] || [ -L "$CONFIG" ]; then trusted_file "$CONFIG" || error 'untrusted configuration'; fi
+    root=$volume/$BASE_NAME
+    if [ -e "$root" ] || [ -L "$root" ]; then trusted_dir "$root" || error 'untrusted runtime directory'; else mkdir -m 755 "$root"; fi
+    lock=$root/.install-lock
+    mkdir -m 700 "$lock" 2>/dev/null || error 'another installation is running or left a lock'
+    stage=
+    cfgtemp=
+    cleanup() { [ -z "$stage" ] || rm -rf -- "$stage"; [ -z "$cfgtemp" ] || rm -f -- "$cfgtemp"; rmdir "$lock" 2>/dev/null || :; }
+    trap cleanup EXIT
+    trap 'exit 1' HUP INT TERM
+    if [ -e "$root/$RELEASE" ] || [ -L "$root/$RELEASE" ]; then
+        ROOT=$root
+        usable_release || error 'existing release is incomplete or untrusted'
+    else
+        stage=$(mktemp -d "$root/.stage.XXXXXXXX") || error 'cannot create staging directory'
+        archive=$stage/codex.tgz
+        printf 'Downloading official Codex %s...\n' "$VERSION" >&2
+        curl -q --fail --silent --show-error --location --proto '=https' --proto-redir '=https' --connect-timeout 20 --max-time 900 "$URL" -o "$archive" || error 'download failed'
+        hash=$(openssl dgst -sha512 -binary "$archive" | openssl base64 -A) || error 'SHA-512 calculation failed'
+        [ "$hash" = "$SHA512" ] || error 'archive SHA-512 mismatch'
+        mkdir "$stage/unpack"
+        # The entire verified native subtree is needed for bundled helpers/resources.
+        tar -xzf "$archive" -C "$stage/unpack" --no-same-owner --no-same-permissions 'package/vendor/x86_64-unknown-linux-musl' || error 'archive extraction failed'
+        native=$stage/unpack/package/vendor/$PLATFORM
+        [ -f "$native/bin/codex" ] && [ -f "$native/codex-path/rg" ] && [ -x "$native/bin/codex-code-mode-host" ] && [ -x "$native/codex-resources/bwrap" ] || error 'archive is missing required files'
+        chmod -R go-w "$native"
+        chmod 755 "$native" "$native/bin" "$native/codex-path" "$native/bin/codex" "$native/codex-path/rg"
+        mkdir -m 700 "$stage/test-home" "$stage/test-home/codex"
+        HOME="$stage/test-home" CODEX_HOME="$stage/test-home/codex" "$native/bin/codex" --version | grep -F -x "codex-cli $VERSION" >/dev/null || error 'isolated version check failed'
+        printf '%s\n' "$SHA512" > "$native/.verified"
+        chmod 644 "$native/.verified"
+        mv "$native" "$root/$RELEASE" || error 'cannot publish release'
+    fi
+    cfgtemp=$(mktemp /etc/.codex-istore-runtime.XXXXXXXX) || error 'cannot create configuration'
+    printf '%s\n' "$volume" > "$cfgtemp"
+    chmod 644 "$cfgtemp"
+    mv -fT "$cfgtemp" "$CONFIG" || error 'cannot publish configuration'
+    cfgtemp=
+    printf 'Installed Codex %s on %s.\n' "$VERSION" "$volume"
+}
+cmd=${1:-status}
+[ "$#" -eq 0 ] || shift
+case "$cmd" in
+    status) [ "$#" -eq 0 ] || error 'usage: codex-istore status'; status;;
+    install) install_runtime "$@";;
+    run) platform_ok || error 'unsupported platform'; lookup || error 'runtime is missing or unavailable'; PATH="$ROOT/$RELEASE/codex-path:$CALLER_PATH"; export PATH; exec "$ROOT/$RELEASE/bin/codex" "$@";;
+    *) error 'usage: codex-istore {status|install /mnt/<volume>|run [args...]}' ;;
+esac

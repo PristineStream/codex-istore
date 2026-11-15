@@ -1,0 +1,30 @@
+{
+  "schemaVersion": 1,
+  "id": "codex-istore",
+  "name": "Codex CLI",
+  "icon": "logo.png",
+  "staticRoot": "/usr/share/codex-istore/www",
+  "desktop": {
+    "mode": "builtin",
+    "component": "LuciContainer",
+    "props": {
+      "initialPath": "/cgi-bin/luci/admin/services/codex-istore",
+      "contentOnly": true,
+      "isolation": "scoped-dom-css",
+      "mountIds": ["root", "app"],
+      "hideChrome": true,
+      "preloadScripts": ["/luci-static/linkeasefull-embed/embed-prelude.js"],
+      "preloadStyles": ["/luci-static/linkeasefull-embed/embed.css"]
+    }
+  },
+  "standalone": {
+    "url": "/cgi-bin/luci/admin/services/codex-istore"
+  },
+  "window": {
+    "width": 980,
+    "height": 700,
+    "singleton": true
+  },
+  "capabilities": ["openwrt", "luci"],
+  "categories": ["openwrt", "tools"]
+}

@@ -1,0 +1,13 @@
+#!/bin/sh
+# rpcd exec plugin: no caller-controlled command, arguments, or environment.
+case "$1:$2" in
+	list:)
+		printf '%s\n' '{"status":{}}'
+		;;
+	call:status)
+		exec /usr/bin/codex-istore status
+		;;
+	*)
+		exit 1
+		;;
+esac
