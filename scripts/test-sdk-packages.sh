@@ -98,14 +98,13 @@ target=/usr/share/codex-istore/codex-istore-plugin.json
 if [ -n "$translation" ]; then
     postinst=$root/usr/lib/opkg/info/luci-app-codex-istore.postinst-pkg
     prerm=$root/usr/lib/opkg/info/luci-app-codex-istore.prerm-pkg
-    [ -f "$postinst" ] && [ -f "$prerm" ] || { echo 'SDK package lifecycle scripts missing' >&2; exit 1; }
-    grep -Fq 'helper="${IPKG_INSTROOT}/usr/share/codex-istore/register-desktop.sh"' "$postinst"
-    grep -Fq '[ -n "${IPKG_INSTROOT}" ] && exit 0' "$postinst"
-    grep -Fq 'helper="${IPKG_INSTROOT}/usr/share/codex-istore/register-desktop.sh"' "$prerm"
-    IPKG_INSTROOT="$root" /bin/sh "$postinst"
+    postrm=$root/usr/lib/opkg/info/luci-app-codex-istore.postrm
+    [ -x "$postinst" ] && [ -x "$prerm" ] && [ -x "$postrm" ] || { echo 'SDK package lifecycle scripts missing' >&2; exit 1; }
+    IPKG_INSTROOT="$root" "$postinst"
     [ -L "$legacy" ] && [ "$(readlink "$legacy")" = "$target" ]
-    IPKG_INSTROOT="$root" /bin/sh "$prerm"
+    IPKG_INSTROOT="$root" "$prerm"
     [ ! -L "$legacy" ]
+    IPKG_INSTROOT="$root" "$postrm"
     echo 'SDK lifecycle scripts with isolated IPKG_INSTROOT: OK'
 fi
 IPKG_INSTROOT=$root "$helper" register
