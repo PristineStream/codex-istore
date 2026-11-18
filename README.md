@@ -1,5 +1,7 @@
 # Codex CLI for iStoreOS
 
+维护仓库：[easepi/codex-istore](https://github.com/easepi/codex-istore)，基于 [PristineStream/codex-istore](https://github.com/PristineStream/codex-istore) 继续维护。
+
 iStoreOS 的社区插件。它在 LuCI 的「服务 → Codex CLI」显示运行环境状态，并提供通过 SSH 安装、登录和使用 Codex 的步骤。Codex 由 OpenAI 提供。插件不在网页中接收登录代码或凭据，也不启动网页终端。
 
 首版面向 iStoreOS 24.10.8（OpenWrt 24.10，x86_64 / musl，opkg）。运行程序固定为 Codex CLI 0.166.0。安装时会从 npm 官方注册表下载 `@openai/codex` 的对应 Linux 发布包，校验 SHA-512，并将运行程序放在数据盘。现有的 `codex` 命令和配置不会被替换。下载和解包会同时占用磁盘空间，建议在数据盘预留至少 2 GiB。
@@ -35,9 +37,19 @@ LuCI 显示的是运行程序状态。若显示「运行程序不可用」，先
 ```sh
 sh scripts/build-ipk.sh
 sh scripts/build-run.sh
-sh dist/codex-istore_0.1.0-1_x86_64.run --check
+sh dist/codex-istore_0.1.0-2_x86_64.run --check
 ```
 
 最后一条只校验包内容，不安装。
 
-用于 iStore 审核的三个 IPK 使用 OpenWrt 24.10.8 x86/64 musl SDK 构建，LuCI 固定为 iStoreOS 24.10.8（2026073111）使用的 `2e459653e1a370ff3da1c8009c76e7287125f803`。主包和简体中文包提交至软件包仓库，元数据配方和图标提交至元数据仓库，由 iStore 维护者审核和发布。此版本只面向 24.10 的 opkg，未验证 25.12 的 APK。 [OpenWrt SDK](https://downloads.openwrt.org/releases/24.10.8/targets/x86/64/) · [iStore 软件包提交说明](https://github.com/istoreos/istore-repo#pr指南) · [iStore 元数据提交说明](https://github.com/istoreos/openwrt-app-meta#在线提交流程)
+快捷构建需要 Node.js（编译中文翻译）、GNU tar 和 iStore 的 `ipkg-build`。开发机上可用 `IPKG_BUILD=/path/to/ipkg-build sh scripts/build-ipk.sh` 指定打包器。包版本从两个 Makefile 读取；打包过程统一生成 root:root 属主，去掉组/其他用户写权限，避免将开发机账号和共享目录权限带到路由器。可用 `python3 scripts/test-quick-packages.py dist` 检查实际生成的 IPK。
+
+上游首版用于 iStore 审核的三个 IPK 使用 OpenWrt 24.10.8 x86/64 musl SDK 构建，LuCI 固定为 iStoreOS 24.10.8（2026073111）使用的 `2e459653e1a370ff3da1c8009c76e7287125f803`。主包和简体中文包提交至软件包仓库，元数据配方和图标提交至元数据仓库，由 iStore 维护者审核和发布。此版本只面向 24.10 的 opkg，未验证 25.12 的 APK。 [OpenWrt SDK](https://downloads.openwrt.org/releases/24.10.8/targets/x86/64/) · [iStore 软件包提交说明](https://github.com/istoreos/istore-repo#pr指南) · [iStore 元数据提交说明](https://github.com/istoreos/openwrt-app-meta#在线提交流程)
+
+## 设备验证（2026-11-18）
+
+维护版本 `0.1.0-2` 的快捷 IPK 已在 `192.168.30.7`（iStoreOS 24.10.1、x86_64、musl、opkg）测试，Codex 0.166.0 安装于 `/mnt/vio4-0`。验证了实际安装、卸载、重装、RPC 访问控制、中文翻译、桌面注册链接、普通用户执行及无模型调用的沙箱命令；浏览器验证了桌面和手机宽度下的状态显示与刷新。
+
+此次修复了普通账号打包时继承构建者 UID/GID 和可组写权限的问题，以及卸载后 rpcd 对象未注销的问题。卸载会删除插件入口并保留数据盘运行程序与配置。
+
+完整范围见[测试记录](docs/test-evidence/2026-11-18/summary.json)和[设备最终状态](docs/test-evidence/2026-11-18/device-state.txt)，另附[桌面截图](docs/test-evidence/2026-11-18/luci-desktop.png)、[手机截图](docs/test-evidence/2026-11-18/luci-mobile.png)。尚未测试账号登录、模型调用、桌面容器内完整启动，以及 Actions 使用的 21.02 IPK / 25.12 APK SDK 全量构建。

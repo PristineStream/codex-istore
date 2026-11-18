@@ -1,0 +1,59 @@
+{
+  "timestamp_utc": "2026-11-18T14:48:06.336800+00:00",
+  "source_base_commit": "f3af8deac048dba45147d40cb1e8063f7f51a977",
+  "source_worktree_contains_uncommitted_fixes": true,
+  "device": "root@192.168.30.7",
+  "device_platform": "iStoreOS 24.10.1 / x86_64 / musl / opkg",
+  "package_version": "0.1.0-2",
+  "runtime_version": "0.166.0",
+  "runtime_volume": "/mnt/vio4-0",
+  "fixed_findings": [
+    {
+      "issue": "Quick packages inherit build-user ownership and group-writable checkout modes",
+      "before": "UID/GID 911:911; desktop hook mode 0775",
+      "after": "UID/GID 0:0; executable hooks 0755; regular files 0644; regression test rejects old IPK"
+    },
+    {
+      "issue": "Uninstall leaves luci.codex-istore registered in rpcd",
+      "before": "ubus list still includes luci.codex-istore after files are removed",
+      "after": "postrm clears LuCI caches and reloads rpcd; real uninstall removes object; reinstall restores it"
+    }
+  ],
+  "passed_checks": [
+    "IPK archive ownership and modes, including build under umask 077",
+    "Quick-package regression test rejects original archive ownership",
+    "Package/control/metadata versions agree with release 2",
+    "Self-extracting installer SHA-256 checks",
+    "Live opkg install, remove and reinstall",
+    "Modern and legacy desktop links created and removed",
+    "Runtime SHA-512 matches pinned official npm release",
+    "Runtime installed on data volume and repeat installation succeeds",
+    "Root and non-root codex --version return codex-cli 0.166.0",
+    "Non-root sandbox executes /bin/echo sandbox-smoke-ok from writable working directory",
+    "Bundled ripgrep and bubblewrap start",
+    "Invalid volume and concurrent installation lock are rejected",
+    "Unauthenticated HTTP RPC access denied; temporary authorized test session reads status",
+    "RPC exposes only status",
+    "Live LuCI Chinese translation loader",
+    "Chromium desktop 1280x900 and mobile 390x844 render installed state and refresh",
+    "No page JavaScript errors or horizontal page overflow at tested widths",
+    "Plugin removal preserves runtime hash and configuration",
+    "System /usr/bin/codex remains absent"
+  ],
+  "notes": [
+    "Target direct npm download was slow; completed via temporary registry-only HTTPS CONNECT proxy through SSH. Installer still fetched official HTTPS URL and verified pinned SHA-512.",
+    "Browser used a temporary rpcd test session created via authorized root SSH; session is destroyed after testing.",
+    "Temporary non-root HOME under /tmp produces an upstream warning about PATH alias creation; binary and sandbox smoke checks succeed."
+  ],
+  "not_tested": [
+    "Account login or model/API requests",
+    "Full Actions 21.02 IPK or 25.12 APK SDK compilation",
+    "Standalone SDK-generated translation package",
+    "End-to-end launch inside the desktop container"
+  ],
+  "artifacts_sha256": {
+    "app-meta-codex-istore_0.1.0-2_all.ipk": "c7e7f5d8a8f3c64bbd0952780bae525aa22288a2d5f6cdd1ea56b7eb4bc61575",
+    "luci-app-codex-istore_0.1.0-2_x86_64.ipk": "3db6755d4c344740f94ddf17e776c77876858b8038331e44bb4123dc533bd621",
+    "codex-istore_0.1.0-2_x86_64.run": "bc84c4c6779d1e8f0cf57fa79c89b469cb540bdc0f20fd1755187ec970c663d1"
+  }
+}

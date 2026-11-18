@@ -1,0 +1,35 @@
+{
+	"kernel": "6.6.86",
+	"hostname": "iStoreOS",
+	"system": "Intel(R) N100",
+	"model": "QEMU Standard PC (Q35 + ICH9, 2009)",
+	"board_name": "qemu-standard-pc-q35-ich9-2009",
+	"rootfs_type": "squashfs",
+	"release": {
+		"distribution": "iStoreOS",
+		"version": "24.10.1",
+		"revision": "2025011019",
+		"target": "x86/64",
+		"description": "iStoreOS 24.10.1 2025011019",
+		"builddate": "1749783175"
+	}
+}
+{"state":"installed","version":"0.166.0","platform":"x86_64-unknown-linux-musl"}
+codex-cli 0.166.0
+Package: luci-app-codex-istore
+Version: 0.1.0-2
+Depends: luci-base, rpcd, curl, ca-bundle, openssl-util, tar
+Status: install user installed
+Architecture: x86_64
+Installed-Time: 1795013206
+
+Package: app-meta-codex-istore
+Version: 0.1.0-2
+Depends: luci-app-codex-istore
+Status: install user installed
+Architecture: all
+Installed-Time: 1795013206
+
+755 0:0 /usr/bin/codex-istore
+755 0:0 /usr/libexec/rpcd/luci.codex-istore
+755 0:0 /usr/share/codex-istore/register-desktop.sh
