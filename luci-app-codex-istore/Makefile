@@ -1,14 +1,14 @@
 include $(TOPDIR)/rules.mk
 
 PKG_VERSION:=0.1.0
-PKG_RELEASE:=2
+PKG_RELEASE:=3
 PKG_PO_VERSION:=$(PKG_VERSION)-r$(PKG_RELEASE)
 PKG_LICENSE:=Apache-2.0
 PKG_MAINTAINER:=PristineStream
 
 LUCI_TITLE:=Codex CLI for iStoreOS (community plugin)
 LUCI_PKGARCH:=x86_64
-LUCI_DEPENDS:=+luci-base +rpcd +curl +ca-bundle +openssl-util +tar
+LUCI_DEPENDS:=@x86_64 +luci-base +rpcd +curl +ca-bundle +openssl-util +tar
 
 define Package/luci-app-codex-istore/postinst
 helper="$${IPKG_INSTROOT}/usr/share/codex-istore/register-desktop.sh"

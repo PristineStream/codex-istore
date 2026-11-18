@@ -36,6 +36,8 @@ def main():
     assert app["Version"] == meta["Version"], "Package versions differ"
     assert app["Architecture"] == "x86_64" and meta["Architecture"] == "all"
     assert "luci-app-codex-istore" in meta["Depends"].split(", ")
+    keep = data.extractfile("./lib/upgrade/keep.d/codex-istore").read().decode().splitlines()
+    assert "/etc/codex-istore-runtime" in keep, "Runtime path missing from sysupgrade backup rules"
     for executable in ("usr/bin/codex-istore", "usr/libexec/rpcd/luci.codex-istore",
                        "usr/share/codex-istore/register-desktop.sh"):
         assert data.getmember("./" + executable).mode == 0o755, executable
